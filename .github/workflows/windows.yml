@@ -1,0 +1,65 @@
+name: Ejecutable Windows
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ejecutable-windows
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compilar ejecutable con .NET incluido
+        shell: pwsh
+        run: |
+          dotnet publish EleccionesMunicipales.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item README.md dist/LEEME.md
+          if (!(Test-Path dist/EleccionesMunicipales.exe)) { throw 'Falta el ejecutable' }
+          if (!(Test-Path dist/wwwroot/audio.js)) { throw 'Falta el audio' }
+      - name: Probar el ejecutable y sus recursos
+        shell: pwsh
+        run: |
+          $env:ASPNETCORE_ENVIRONMENT = 'Production'
+          $process = Start-Process (Resolve-Path dist/EleccionesMunicipales.exe) -ArgumentList '--smoke-test' -PassThru -RedirectStandardOutput stdout.log -RedirectStandardError stderr.log
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 40; $i++) {
+              if ($process.HasExited) { throw 'El ejecutable se cerró antes de responder' }
+              try {
+                $response = Invoke-WebRequest http://127.0.0.1:5180/ -TimeoutSec 2
+                if ($response.StatusCode -eq 200 -and $response.Content.Contains('Tu voto')) { $ready = $true; break }
+              } catch { Start-Sleep -Milliseconds 500 }
+            }
+            if (!$ready) { throw 'La aplicación no respondió' }
+            foreach ($route in @('app.css', 'audio.js', '_framework/blazor.web.js')) {
+              $asset = Invoke-WebRequest "http://127.0.0.1:5180/$route" -TimeoutSec 5
+              if ($asset.StatusCode -ne 200 -or $asset.RawContentLength -eq 0) { throw "Recurso ausente: $route" }
+            }
+          } finally {
+            if (!$process.HasExited) { Stop-Process -Id $process.Id -Force }
+            Get-Content stdout.log, stderr.log -ErrorAction SilentlyContinue
+          }
+      - name: Empaquetar
+        shell: pwsh
+        run: Compress-Archive -Path dist/* -DestinationPath EleccionesMunicipales-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EleccionesMunicipales-Windows-x64
+          path: EleccionesMunicipales-Windows-x64.zip
+      - name: Publicar descarga
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "windows-${{ github.run_number }}"
+          gh release create $tag EleccionesMunicipales-Windows-x64.zip --target '${{ github.sha }}' --title 'Aplicación para Windows' --notes 'Extraé todo el ZIP en una carpeta y abrí EleccionesMunicipales.exe. Se abre en tu navegador. No requiere Visual Studio ni instalar .NET. Mantené la consola abierta mientras la usás.' --latest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
