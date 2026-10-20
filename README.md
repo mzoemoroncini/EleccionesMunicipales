@@ -1,9 +1,19 @@
 # Elecciones municipales
 Prototipo académico del TP de Interfaz de Usuario de Micaela Zoe Moroncini.
 
+## Ejecutar en Windows sin Visual Studio
+1. Entrar en Releases del repositorio y descargar `EleccionesMunicipales-Windows-x64.zip` desde Assets.
+2. Extraer TODO el ZIP en una carpeta; conservar wwwroot junto al ejecutable.
+3. Abrir `EleccionesMunicipales.exe`. Se abrirá el navegador en http://127.0.0.1:5180.
+4. Mantener abierta la ventana de consola. Cerrarla para apagar la aplicación.
+
+Incluye .NET y no necesita instalarlo. Requiere Windows x64. Si el navegador no se abre solo, abrir manualmente la dirección indicada. El servidor escucha solamente en esta computadora. Si la ventana se cierra, ejecutar el EXE desde una terminal para ver el mensaje de error. No ejecutar dos copias al mismo tiempo.
+
+GitHub Actions compila y prueba el arranque del ejecutable y la disponibilidad de sus recursos antes de publicar la descarga. Las interacciones completas y el sonido deben comprobarse en el equipo de uso.
+
 ## Abrir en Visual Studio
 1. Extraer el ZIP completo.
-2. Abrir `EleccionesMunicipales.csproj` en Visual Studio compatible con .NET 10 y la carga de trabajo Desarrollo de ASP.NET y web.
+2. Abrir `EleccionesMunicipales.sln` en Visual Studio compatible con .NET 10 y la carga de trabajo Desarrollo de ASP.NET y web.
 3. Presionar Ctrl+F5. Se abre http://localhost:5180.
 
 Alternativa con SDK .NET 10: `dotnet run --project EleccionesMunicipales.csproj`.
