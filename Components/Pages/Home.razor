@@ -3,55 +3,67 @@
 @using Microsoft.JSInterop
 <PageTitle>Elecciones municipales · Prototipo</PageTitle>
 <div class="app @(large ? "large" : "")">
-<header><a class="brand" href="/">▣ <strong>Elecciones municipales</strong></a><span class="badge">Prototipo académico · Datos ficticios</span></header>
-<nav aria-label="Perfiles de demostración">
-@foreach (var item in new[]{"Votante","Personal electoral","Candidatos","Tribunal"})
-{ <button class="@(role == item ? "active" : "")" disabled="@(stage == 3 || stage == 5)" @onclick="() => Switch(item)">@item</button> }
-</nav>
+<header><a class="brand" href="/">ELECCIONES MUNICIPALES</a><span class="profile-title">@(role == "Votante" ? "VOTANTE" : role == "Candidatos" ? "CANDIDATURA · CONSULTA" : role == "Tribunal" ? "TRIBUNAL · AUDITORÍA" : incidentView ? "RESPONSABLE ELECTORAL" : "PERSONAL ELECTORAL")</span></header>
 <main id="main-content">
-@if (role == "Votante")
+@if(role == "Votante")
 {
 <div id="voter-audio-scope"></div>
-<div class="toolbar"><span>Sesión privada de demostración</span><div><button @onclick="() => large = !large">@(large ? "Texto normal" : "Aumentar texto")</button><button @onclick="Help">Pedir ayuda</button></div></div>
-<section class="audio-controls" aria-label="Lectura en voz alta">
-<label><input type="checkbox" @bind="headphones" @bind:after="HeadphonesChanged"/> Conecté los auriculares y comprobé que el sonido sale por ellos.</label>
-<p class="muted">La aplicación no detecta los auriculares. El audio usa la salida configurada en tu equipo. Si los desconectás, detené la lectura primero.</p>
-<div class="audio-actions"><button disabled="@(!headphones || audioEnabled)" @onclick="EnableAudio">Activar lectura en voz alta</button><button disabled="@(!audioEnabled)" @onclick="RepeatAudio">Repetir pantalla</button><button disabled="@(!audioEnabled)" @onclick="StopAudio">Detener lectura</button></div>
-<p id="audio-status" role="status">@(audioEnabled ? "Lectura activada. Se leen las pantallas y los controles al enfocarlos con el teclado." : "Lectura desactivada.")</p>
-</section>
-@if(stage < 4){<ol class="steps"><li class="@(stage <= 1 ? "current" : "")">1. Elegir</li><li class="@(stage == 2 ? "current" : "")">2. Revisar</li><li class="@(stage == 3 ? "current" : "")">3. Emitir</li></ol>}
 @if(stage == 0)
-{<section class="welcome"><span class="eyebrow">ELECCIÓN DE INTENDENTE</span><h1>Tu voto, paso a paso</h1><p>Elegí una opción, revisala y confirmá la emisión.</p><div class="instructions"><p><strong>1. Elegí</strong><br/>Una candidatura o voto en blanco.</p><p><strong>2. Revisá</strong><br/>Podés corregir tu selección.</p><p><strong>3. Emití</strong><br/>Esperá la confirmación del registro.</p></div><button class="primary" @onclick="() => stage = 1">Comenzar a votar →</button><p class="muted">Tu documento y tu selección no se muestran juntos.</p></section>}
-@if(stage == 1)
-{<h1>Elegí tu opción</h1><p>Seleccioná una sola opción para intendente. Podés cambiarla antes de emitir.</p><div class="choices" role="radiogroup" aria-label="Opciones electorales">
-@for(var i=0;i<options.Length;i++){var index=i;<button role="radio" aria-checked="@(selected == index ? "true" : "false")" class="choice @(selected == index ? "selected" : "")" @onclick="() => selected = index"><span class="radio">@(selected == index ? "●" : "○")</span><strong>@options[index]</strong><span>@descriptions[index]</span><b>@(selected == index ? "Seleccionada" : "Seleccionar")</b></button>}
-</div><div class="actions"><button @onclick="() => stage = 0">Volver al inicio</button><button class="primary" disabled="@(selected < 0)" @onclick="() => stage = 2">Revisar selección →</button></div>}
-@if(stage == 2)
-{<h1>Revisá tu selección</h1><p>Tu voto todavía no fue emitido.</p><section class="review"><span>Seleccionaste</span><h2>@options[selected]</h2><p>@descriptions[selected]</p></section><p>Una vez registrado, el voto no se puede modificar.</p><label class="simulation"><input type="checkbox" @bind="simulate"/> Simular respuesta incierta para la demostración</label><div class="actions"><button @onclick="() => stage = 1">← Cambiar selección</button><button class="primary" @onclick="Emit">Emitir voto</button></div>}
-@if(stage == 3){<section class="welcome" role="status"><h1>Registrando voto…</h1><p>Esperá la confirmación. No cierres esta pantalla.</p></section>}
-@if(stage == 4){<section class="welcome"><div class="success">✓</div><h1>Tu voto fue registrado</h1><p>El proceso terminó correctamente.</p><p>No se muestra la opción elegida para proteger tu privacidad.</p><button class="primary" @onclick="Finish">Finalizar y salir</button></section>}
-@if(stage == 5){<section class="welcome"><h1>Estamos verificando tu voto</h1><p>No recibimos la confirmación. Esto no significa que el voto haya sido rechazado.</p><p>Consultá el mismo intento antes de continuar. No se permite una segunda emisión.</p><button class="primary" @onclick="Check">Consultar estado</button><button @onclick="Help">Pedir ayuda</button></section>}
-@if(stage == 6){<section class="welcome"><h1>Sesión finalizada</h1><p>Los datos visibles de la selección fueron borrados.</p><button class="primary" @onclick="Reset">Iniciar nueva demostración</button></section>}
+{
+@if(!sessionActive){<p class="notice" role="status">Sesión sin habilitar. El personal debe validar tu documento y habilitar la sesión antes de comenzar.</p>}
+<h1>Votar para intendente</h1><p class="subtitle">Tu voto es secreto. Seguí estos tres pasos.</p>
+<div class="instructions"><section class="panel"><span class="step-number">1</span><h2>Elegí</h2><p>Una lista o voto en blanco.</p></section><section class="panel"><span class="step-number">2</span><h2>Revisá</h2><p>Podés cambiar tu selección.</p></section><section class="panel"><span class="step-number">3</span><h2>Confirmá</h2><p>Se emite un solo voto.</p></section></div>
+<div class="intro-copy"><h2>Comenzá cuando estés listo o lista.</h2><p>Si necesitás ayuda, podés solicitarla sin mostrar tu elección.</p></div>
+<div class="start-actions"><button class="primary" disabled="@(!sessionActive)" @onclick="StartVoting">Comenzar a votar</button><button @onclick="Help">Pedir ayuda</button><button @onclick="() => large = !large">@(large ? "Texto normal" : "Aumentar texto")</button><div><button class="audio-open" @onclick="() => audioPanel = !audioPanel">Escuchar audio</button><span class="muted headphone-note">Requiere auriculares</span></div></div>
 }
-@if(role == "Personal electoral")
-{<span class="eyebrow">MESA 12 · PERSONAL ELECTORAL</span><h1>Verificación de votantes</h1><p>Compará la identidad con el documento presentado antes de habilitar.</p><label for="dni">Número de documento</label><div class="search"><input id="dni" inputmode="numeric" maxlength="8" @bind="dni" placeholder="Ingresá el DNI"/><button class="primary" @onclick="Search">Buscar en padrón</button></div><p class="muted">Ejemplos ficticios: 30111222 (habilitado), 30222333 (ya votó), 30333444 (otra mesa).</p>
-@if(person != ""){<section class="review"><h2>@person</h2><p>@personState</p><button class="primary" disabled="@(!eligible || enabled)" @onclick="Enable">@(enabled ? "Sesión habilitada" : "Habilitar sesión privada")</button></section>}
-<h2>Registrar incidencia</h2><p>No incluyas la opción votada ni preferencias electorales.</p><label for="type">Tipo</label><select id="type" @bind="incidentType"><option value="">Seleccionar tipo</option><option>Falla de terminal</option><option>Problema de padrón</option><option>Emisión pendiente</option></select><label for="terminal">Terminal</label><input id="terminal" @bind="terminal" placeholder="Ejemplo: T-02"/><label for="detail">Descripción</label><textarea id="detail" @bind="detail" maxlength="500"></textarea><button class="primary" @onclick="SaveIncident">Guardar incidencia</button>
-@if(incidents.Count > 0){<h2>Seguimiento de incidencias</h2>@foreach(var incident in incidents){<section class="record"><strong>@incident.Code · @incident.Type · Mesa 12 · @incident.Terminal</strong><p>@incident.Detail</p><p>Estado: @incident.Status</p><p class="muted">Historial: @string.Join(" → ",incident.History)</p><button disabled="@(incident.Status == "Resuelta")" @onclick="() => Advance(incident)">@(incident.Status == "Abierta" ? "Pasar a revisión" : "Resolver tras comprobar terminal")</button></section>}}
+@if(stage == 1)
+{
+<h1>Elegí una opción</h1><p class="subtitle">Paso 1 de 3 · Seleccioná una sola lista o votá en blanco.</p>
+<div class="choices" role="radiogroup" aria-label="Opciones electorales">
+@for(var i=0;i<options.Length;i++){var index=i;<button role="radio" aria-checked="@(selected == index ? "true" : "false")" class="choice @(selected == index ? "selected" : "")" @onclick="() => selected = index"><span class="radio" aria-hidden="true">@(selected == index ? "●" : "○")</span><strong>@options[index]</strong><span>@descriptions[index]</span><b>@(selected == index ? "Seleccionada" : "Tocar para seleccionar")</b></button>}
+</div><p>Podés cambiar de opción antes de emitir el voto.</p><div class="actions selection-actions"><button @onclick="() => stage = 0">Volver</button><button class="primary" disabled="@(selected < 0)" @onclick="ReviewSelection">Revisar selección</button></div>
+}
+@if(stage == 2)
+{
+<h1>Revisá tu selección</h1><p class="subtitle">Paso 2 de 3 · El voto todavía no fue emitido.</p><div class="narrow"><section class="panel review"><span class="subtitle">Seleccionaste</span><h2>@options[selected]</h2><p>@descriptions[selected]</p></section><div class="review-copy"><h2>Al tocar «Emitir voto», tu elección se registra.</h2><p>Después de emitirlo no vas a poder cambiarlo.</p></div><div class="actions equal"><button @onclick="() => stage = 1">Cambiar selección</button><button class="primary" @onclick="Emit">Emitir voto</button></div></div>
+}
+@if(stage == 3){<h1>Registrando voto…</h1><p class="subtitle">Esperá la confirmación. No cierres esta pantalla.</p><section class="panel waiting" role="status"><span class="spinner" aria-hidden="true"></span><h2>Estamos registrando tu voto</h2><p>Se procesa un único intento.</p></section>}
+@if(stage == 4){<h1>Tu voto fue registrado</h1><p class="subtitle">Paso 3 de 3 · La votación finalizó correctamente.</p><section class="panel confirmation narrow"><div class="success" aria-hidden="true">✓</div><h2>No necesitás volver a votar.</h2><p>Esta pantalla no muestra tu elección.</p></section><div class="center-actions"><button class="primary" @onclick="Finish">Finalizar y salir</button></div>}
+@if(stage == 5){<h1>Estamos verificando tu voto</h1><p class="subtitle">No pudimos confirmar en pantalla si el registro terminó.</p><section class="warning recovery"><h2>Esperá un momento</h2><p>No vuelvas a emitir el voto mientras se verifica.</p><p>El sistema consultará el estado del mismo intento.</p><p>Si el problema continúa, pedí ayuda.</p></section><div class="actions recovery-actions"><button class="primary" @onclick="Check">Consultar estado</button><button @onclick="Help">Pedir ayuda</button></div>}
+@if(stage == 6){<h1>Sesión finalizada</h1><p class="subtitle">Los datos visibles de la selección fueron borrados.</p><section class="panel confirmation narrow"><div class="success" aria-hidden="true">✓</div><h2>Gracias por participar.</h2><p>La terminal está lista para una nueva sesión de demostración.</p></section><div class="center-actions"><button class="primary" @onclick="Reset">Verificar próximo votante</button></div>}
+@if(stage is 1 or 2 or 5){<div class="accessibility"><button @onclick="Help">Pedir ayuda</button><button @onclick="() => large = !large">@(large ? "Texto normal" : "Texto grande")</button><button @onclick="() => audioPanel = !audioPanel">Audio con auriculares</button></div>}
+@if(audioPanel || audioEnabled){<section class="audio-controls" aria-label="Lectura en voz alta"><h2>Escuchar con auriculares</h2><label><input type="checkbox" @bind="headphones" @bind:after="HeadphonesChanged"/> Conecté los auriculares y comprobé que el sonido sale por ellos.</label><p class="muted">El audio usa la salida configurada en tu equipo. Antes de desconectar los auriculares, detené la lectura.</p><div class="audio-actions"><button disabled="@(!headphones || audioEnabled)" class="primary" @onclick="EnableAudio">Activar lectura</button><button disabled="@(!audioEnabled)" @onclick="RepeatAudio">Repetir pantalla</button><button disabled="@(!audioEnabled)" @onclick="StopAudio">Detener lectura</button></div><p id="audio-status" role="status">@(audioEnabled ? "Lectura activada. Usá Tab para escuchar los controles." : "Lectura desactivada.")</p></section>}
+@if(stage == 2){<details class="simulation"><summary>Opciones para la demostración</summary><label><input type="checkbox" @bind="simulate"/> Simular respuesta incierta al emitir</label></details>}
+}
+@if(role == "Personal electoral" && !incidentView)
+{
+<h1>Verificar votante</h1><p class="subtitle">Mesa 4 · Verificá la identidad antes de habilitar una sesión privada.</p>
+<section class="panel search-panel"><div><label for="dni">Documento</label><input id="dni" inputmode="numeric" maxlength="8" @bind="dni" @bind:event="oninput" @bind:after="DocumentChanged" placeholder="Ingresá el documento"/></div><button class="primary" @onclick="Search">Buscar en padrón</button></section>
+@if(person != ""){<section class="panel person"><h2>@person</h2><p>Mesa asignada: @(dni == "30333444" ? "18" : "4")</p><p class="person-state @(eligible ? "ok" : "")">@personState</p>@if(eligible){<p class="subtitle">Sin emisión previa registrada</p><label class="identity-check"><input type="checkbox" @bind="identityChecked"/> Verifiqué que la identidad coincide con el documento presentado.</label>}</section>}else{<section class="panel person empty"><h2>Consultá el padrón</h2><p>Buscá por documento para verificar la mesa y el estado de la persona.</p></section>}
+<div class="actions equal"><button class="primary" disabled="@(!eligible || enabled || !identityChecked)" @onclick="Enable">@(enabled ? "Sesión habilitada" : "Habilitar sesión privada")</button><button @onclick="() => {incidentView = true; message = string.Empty;}">Registrar incidencia</button></div><details class="demo-details"><summary>Documentos de demostración</summary><p>30111222 y 30444555: habilitados · 30222333: ya votó · 30333444: otra mesa.</p></details>
+}
+@if(role == "Personal electoral" && incidentView)
+{
+<h1>Incidencias de la jornada</h1><p class="subtitle">Mesa 4 · Gestión operativa sin acceso a elecciones individuales</p><section class="panel"><h2>Nueva incidencia</h2><div class="form-grid"><div><label for="type">Tipo</label><select id="type" @bind="incidentType"><option value="">Seleccionar tipo</option><option>Falla de terminal</option><option>Problema de padrón</option><option>Emisión pendiente</option></select><label for="terminal">Terminal</label><input id="terminal" @bind="terminal" placeholder="Ejemplo: T04"/></div><div><label for="detail">Descripción</label><textarea id="detail" @bind="detail" maxlength="500" placeholder="Describí el problema. No incluir la opción votada."></textarea></div></div></section><div class="incident-guidance"><h2>Protegé el secreto del voto</h2><p>Si la falla afecta una emisión, suspendé la terminal y resolvé su estado antes de habilitar otra votación a esa persona.</p></div><div class="actions"><button class="primary" @onclick="SaveIncident">Guardar incidencia</button><button @onclick="() => {incidentView = false; message = string.Empty;}">Volver a verificación</button></div>
+@if(incidents.Count>0){<h2 class="section-title">Seguimiento de incidencias</h2>@foreach(var incident in incidents){<section class="panel record"><div class="record-heading"><h3>@incident.Code · @incident.Terminal</h3><span class="state">@incident.Status</span></div><p><strong>@incident.Type</strong> · @incident.Detail</p><p class="muted">Historial: @string.Join(" → ",incident.History)</p><button disabled="@(incident.Status == "Resuelta")" @onclick="() => Advance(incident)">@(incident.Status == "Abierta" ? "Pasar a revisión" : "Resolver tras comprobar terminal")</button></section>}}
 }
 @if(role == "Candidatos")
-{<span class="eyebrow">CONSULTA PARA CANDIDATURAS</span><h1>Seguimiento de la jornada</h1><section class="review"><h2>Jornada en curso</h2><p>Los resultados estarán disponibles cuando se publiquen las actas.</p><button disabled>Consultar actas · Sin publicación</button></section><h2>Registrar observación</h2><label for="mesa">Mesa</label><input id="mesa" type="number" min="1" @bind="observationTable"/><label for="category">Categoría</label><select id="category" @bind="category"><option value="">Seleccionar categoría</option><option>Organización</option><option>Accesibilidad</option><option>Problema operativo</option></select><label for="observation">Descripción</label><textarea id="observation" @bind="observation" maxlength="500"></textarea><button class="primary" @onclick="SaveObservation">Registrar observación</button>@foreach(var o in observations){<section class="record"><strong>@o · Recibida</strong><p>La observación quedó pendiente de revisión en esta demostración.</p></section>}}
+{
+<h1>Seguimiento de la elección</h1><p class="subtitle">Perfil de demostración · Información general y observaciones propias</p><div class="two-columns status-cards"><section class="panel"><span class="subtitle">Estado de la jornada</span><h2>En curso</h2></section><section class="panel"><span class="subtitle">Actas y resultados</span><h2>Aún no publicados</h2></section></div><h2 class="section-title">Mis observaciones</h2><div class="panel table-panel"><table><thead><tr><th>Código</th><th>Asunto</th><th>Estado</th><th>Seguimiento</th></tr></thead><tbody>@if(observations.Count==0){<tr><td colspan="4" class="empty-cell">Todavía no registraste observaciones.</td></tr>}@for(var i=0;i<observations.Count;i++){var o=observations[i];<tr><td>OBS @((i+1).ToString("000"))</td><td>@o</td><td>Recibida</td><td><button class="text-button" @onclick="() => observationDetail = !observationDetail">Ver detalle</button></td></tr>}</tbody></table></div>
+@if(observationDetail){<section class="panel"><h2>Estado del seguimiento</h2><p>La observación fue recibida y está pendiente de revisión en esta demostración. Todavía no hay respuestas.</p></section>}
+<div class="actions"><button class="primary" @onclick="() => observationForm = !observationForm">Registrar observación</button><button disabled>Consultar actas</button></div>
+@if(observationForm){<section class="panel observation-form"><h2>Nueva observación</h2><div class="form-grid"><div><label for="mesa">Mesa</label><input id="mesa" type="number" min="1" @bind="observationTable"/></div><div><label for="category">Categoría</label><select id="category" @bind="category"><option value="">Seleccionar categoría</option><option>Organización</option><option>Accesibilidad</option><option>Problema operativo</option></select></div></div><label for="observation">Descripción</label><textarea id="observation" @bind="observation" maxlength="500"></textarea><div class="actions"><button class="primary" @onclick="SaveObservation">Guardar observación</button><button @onclick="() => observationForm = false">Cancelar</button></div></section>}
+}
 @if(role == "Tribunal")
-{<span class="eyebrow">TRIBUNAL · EJEMPLO DE MESA CERRADA</span><h1>Conciliación y revisión de acta</h1><p>Mesa 12 · Totales ficticios independientes de la simulación de voto.</p><div class="metrics"><section><span>Personas que votaron</span><strong>1.000</strong></section><section><span>Votos contabilizados</span><strong>1.000</strong></section><section><span>Diferencia</span><strong>@(difference ? "1" : "0")</strong></section></div><label class="simulation"><input type="checkbox" @bind="difference" @bind:after="Invalidate"/> Simular diferencia en el acta</label><label class="simulation"><input type="checkbox" @bind="pending" @bind:after="Invalidate"/> Simular incidencia de emisión pendiente</label><button @onclick="() => showAct = !showAct">@(showAct ? "Ocultar acta" : "Revisar acta")</button>
-@if(showAct){<table><caption>Detalle del acta ficticia · Mesa 12</caption><thead><tr><th>Opción</th><th>Votos</th></tr></thead><tbody><tr><td>Lista 1</td><td>@(difference ? "601" : "600")</td></tr><tr><td>Lista 2</td><td>350</td></tr><tr><td>En blanco</td><td>50</td></tr><tr><th>Total</th><th>@(difference ? "1.001" : "1.000")</th></tr></tbody></table>}
-@if(difference || pending){<p class="warning">Validación bloqueada: revisá las diferencias y las incidencias de emisión pendientes.</p>}
-<button class="primary" disabled="@(difference || pending || validated || !showAct)" @onclick="() => confirmAct = true">@(validated ? "Acta validada" : "Validar acta de mesa")</button>
-@if(confirmAct){<section class="review"><h2>Confirmar validación de mesa 12</h2><p>1.000 personas · 1.000 votos · Diferencia 0. Esta acción valida el acta de demostración.</p><button @onclick="() => confirmAct = false">Cancelar</button><button class="primary" @onclick="Validate">Confirmar validación</button></section>}
-@if(validated){<p role="status">Acta validada. La publicación requiere una acción posterior.</p>}
-<a class="download" href="auditoria-ejemplo.csv" download>Descargar ejemplo de auditoría</a><p class="muted">Archivo estático ilustrativo. No contiene identidades de votantes ni preferencias individuales.</p>}
-@if(message != ""){<p class="notice" role="status">@message</p>}
-</main><footer>Trabajo práctico · Micaela Zoe Moroncini · Simulación sin autenticación ni persistencia. Los perfiles se eligen libremente para exponer.</footer>
-</div>
+{
+<h1>Control y resultados de mesa</h1><p class="subtitle">Mesa 4 · Jornada cerrada · @(validated ? "Acta validada" : "Acta pendiente de validación")</p><div class="metrics"><section class="panel"><span>Personas que votaron</span><strong>1.000</strong></section><section class="panel"><span>Votos contabilizados</span><strong>@(difference ? "1.001" : "1.000")</strong></section><section class="panel"><span>Diferencia</span><strong class="@(difference ? "difference" : "")">@(difference ? "1" : "0")</strong></section></div><div class="two-columns"><section class="panel"><h2>Escrutinio de ejemplo</h2><dl class="tally"><div><dt>Lista 1</dt><dd>@(difference ? "601" : "600")</dd></div><div><dt>Lista 2</dt><dd>350</dd></div><div><dt>Votos en blanco</dt><dd>50</dd></div></dl></section><section class="panel"><h2>Registro de auditoría</h2><p>EV 021 · Cierre de mesa</p><p>EV 022 · @(difference ? "Diferencia pendiente de revisión" : "Conciliación sin diferencias")</p><p>EV 023 · Acta generada</p>@if(validated){<p class="ok">Acta validada en esta demostración</p>}</section></div><div class="actions tribunal-actions"><button @onclick="() => showAct = !showAct">Revisar acta</button><a class="button" href="auditoria-ejemplo.csv" download>Exportar auditoría</a><button class="primary" disabled="@(difference || pending || validated || !showAct)" @onclick="() => confirmAct = true">@(validated ? "Acta validada" : "Validar acta de mesa")</button></div>
+@if(showAct){<section class="panel act-detail"><h2>Acta de mesa 4</h2><p>Personas que votaron: 1.000 · Votos: @(difference ? "1.001" : "1.000") · Diferencia: @(difference ? "1" : "0")</p><p>Incidencias de emisión pendientes: @(pending ? "Sí" : "No").</p><p class="muted">Totales ficticios independientes de los votos simulados.</p></section>}
+@if(difference||pending){<p class="warning" role="status">Validación bloqueada. Revisá las diferencias y las incidencias de emisión pendientes.</p>}
+@if(confirmAct){<section class="panel"><h2>Confirmar validación de mesa 4</h2><p>1.000 personas · 1.000 votos · Diferencia 0.</p><div class="actions"><button @onclick="() => confirmAct = false">Cancelar</button><button class="primary" @onclick="Validate">Confirmar validación</button></div></section>}
+<details class="simulation"><summary>Opciones para la demostración</summary><label><input type="checkbox" @bind="difference" @bind:after="Invalidate"/> Simular diferencia en el acta</label><label><input type="checkbox" @bind="pending" @bind:after="Invalidate"/> Simular incidencia de emisión pendiente</label><p class="muted">La exportación es un CSV estático de ejemplo.</p></details>
+}
+@if(message!=""){<p class="notice" role="status">@message</p>}
+</main><footer><p>Prototipo académico · Todos los datos son de ejemplo</p><details class="profile-switcher"><summary>Cambiar perfil de demostración · @role</summary><nav aria-label="Perfiles de demostración">@foreach(var item in new[]{"Votante","Personal electoral","Candidatos","Tribunal"}){<button class="@(role==item ? "active" : "")" disabled="@(stage is 3 or 5 || sessionActive)" @onclick="() => Switch(item)">@item</button>}</nav><small>Sin autenticación ni persistencia · Micaela Zoe Moroncini</small></details></footer></div>
 @code {
  async Task EnableAudio(){
   if(!headphones)return;
@@ -60,22 +72,60 @@
  async Task RepeatAudio(){if(audioEnabled)await JS.InvokeVoidAsync("electionAudio.repeat");}
  async Task StopAudio(){audioEnabled=false;await JS.InvokeVoidAsync("electionAudio.stop");}
  async Task HeadphonesChanged(){if(!headphones)await StopAudio();}
- string role="Votante", message="",dni="",person="",personState="",incidentType="",terminal="",detail="",category="",observation="";
- int stage, selected=-1,observationTable=12; bool headphones,audioEnabled; bool large,simulate,eligible,enabled,difference,pending,showAct,confirmAct,validated;
- readonly string[] options=["Lista 1 · Ana Torres","Lista 2 · Martín López","Voto en blanco"];
- readonly string[] descriptions=["Encuentro Municipal · Candidatura ficticia","Ciudad en Marcha · Candidatura ficticia","Sin elegir una candidatura"];
+ string role="Personal electoral", message="",dni="",person="",personState="",incidentType="",terminal="",detail="",category="",observation="";
+ int stage, selected=-1,observationTable=4; bool identityChecked,sessionActive; string searchedDni="",activeDni=""; HashSet<string> votedDocuments=["30222333"]; bool audioPanel,incidentView,observationForm,observationDetail; bool headphones,audioEnabled; bool large,simulate,eligible,enabled,difference,pending,showAct,confirmAct,validated;
+ readonly string[] options=["Lista 1","Lista 2","Voto en blanco"];
+ readonly string[] descriptions=["Candidatura A","Candidatura B","Sin elegir candidatura"];
  List<Incident> incidents=[]; List<string> observations=[];
- async Task Switch(string value){if(stage is 3 or 5)return;await StopAudio();headphones=false;role=value;message="";if(value!="Votante"){selected=-1;stage=0;}}
+ async Task Switch(string value){
+  if(stage is 3 or 5 || sessionActive)return;
+  await StopAudio();audioPanel=false;headphones=false;role=value;incidentView=false;message="";
+  selected=-1;stage=0;DocumentChanged();
+ }
  void Help()=>message="Solicitud de ayuda simulada. El personal puede asistirte sin conocer tu selección.";
- async Task Emit(){if(stage!=2 || selected<0)return;stage=3;message="";await Task.Delay(900);stage=simulate?5:4;if(stage==4)selected=-1;}
- async Task Check(){if(stage!=5)return;stage=3;await Task.Delay(600);selected=-1;stage=4;message="Se confirmó el mismo intento de demostración. No se emitió otro voto.";}
- async Task Finish(){await StopAudio();headphones=false;selected=-1;simulate=false;message="";stage=6;}
- async Task Reset(){await StopAudio();headphones=false;selected=-1;simulate=false;message="";stage=0;}
- void Search(){person="";eligible=false;enabled=false;message="";if(dni.Length is <7 or >8 || !dni.All(char.IsAsciiDigit)){message="Ingresá un DNI de 7 u 8 dígitos, sin puntos.";return;}switch(dni){case "30111222":person="María Pérez · DNI 30111222";personState="Mesa 12 · Habilitada para votar";eligible=true;break;case "30222333":person="Juan García · DNI 30222333";personState="Voto ya registrado. No se puede habilitar otra sesión.";break;case "30333444":person="Lucía Ruiz · DNI 30333444";personState="Corresponde a mesa 18. Indicá a la persona dónde dirigirse.";break;default:message="Documento no encontrado en el padrón de demostración.";break;}}
- void Enable(){if(!eligible || enabled)return;enabled=true;message="Habilitación simulada. Seleccioná el perfil Votante para mostrar la sesión privada.";}
+ void StartVoting(){if(!sessionActive)return;selected=-1;stage=1;}
+ void ReviewSelection(){if(!sessionActive || selected<0 || stage!=1)return;stage=2;}
+ void ConfirmParticipation(){
+  if(!sessionActive || activeDni=="")return;
+  votedDocuments.Add(activeDni);activeDni="";sessionActive=false;selected=-1;
+ }
+ async Task Emit(){
+  if(!sessionActive || stage!=2 || selected<0)return;
+  stage=3;message="";await Task.Delay(900);stage=simulate?5:4;
+  if(stage==4)ConfirmParticipation();
+ }
+ async Task Check(){
+  if(!sessionActive || stage!=5)return;
+  stage=3;await Task.Delay(600);ConfirmParticipation();stage=4;
+  message="Se confirmó el mismo intento de demostración. No se emitió otro voto.";
+ }
+ async Task Finish(){await StopAudio();audioPanel=false;headphones=false;selected=-1;simulate=false;message="";stage=6;}
+ async Task Reset(){
+  await StopAudio();audioPanel=false;headphones=false;selected=-1;simulate=false;message="";stage=0;
+  role="Personal electoral";dni="";DocumentChanged();
+ }
+ void DocumentChanged(){person="";personState="";eligible=false;enabled=false;identityChecked=false;searchedDni="";message="";}
+ void Search(){
+  DocumentChanged();
+  if(dni.Length is <7 or >8 || !dni.All(char.IsAsciiDigit)){message="Ingresá un DNI de 7 u 8 dígitos, sin puntos.";return;}
+  searchedDni=dni;
+  switch(dni){
+   case "30111222": person="María Pérez · DNI 30111222";eligible=!votedDocuments.Contains(dni);personState=eligible?"Estado: habilitada para votar":"Voto ya registrado. No se puede habilitar otra sesión.";break;
+   case "30444555": person="Pedro Gómez · DNI 30444555";eligible=!votedDocuments.Contains(dni);personState=eligible?"Estado: habilitado para votar":"Voto ya registrado. No se puede habilitar otra sesión.";break;
+   case "30222333":person="Juan García · DNI 30222333";personState="Voto ya registrado. No se puede habilitar otra sesión.";break;
+   case "30333444":person="Lucía Ruiz · DNI 30333444";personState="Corresponde a mesa 18. Indicá a la persona dónde dirigirse.";break;
+   default:message="Documento no encontrado en el padrón de demostración.";break;
+  }
+ }
+ async Task Enable(){
+  if(!eligible || enabled || !identityChecked || searchedDni!=dni || sessionActive || votedDocuments.Contains(dni))return;
+  activeDni=searchedDni;sessionActive=true;
+  await StopAudio();audioPanel=false;headphones=false;large=false;selected=-1;simulate=false;
+  role="Votante";stage=0;dni="";DocumentChanged();
+ }
  void SaveIncident(){if(string.IsNullOrWhiteSpace(incidentType)||string.IsNullOrWhiteSpace(terminal)||string.IsNullOrWhiteSpace(detail)){message="Completá tipo, terminal y descripción de la incidencia.";return;}incidents.Add(new(){Code=$"INC-{incidents.Count+1:000}",Type=incidentType,Terminal=terminal.Trim(),Detail=detail.Trim()});message="Incidencia registrada. Si afecta una emisión, mantené suspendida la terminal hasta verificar el estado.";detail="";terminal="";incidentType="";}
  void Advance(Incident incident){if(incident.Status=="Resuelta")return;incident.Status=incident.Status=="Abierta"?"En revisión":"Resuelta";incident.History.Add(incident.Status);}
- void SaveObservation(){if(observationTable<1 || string.IsNullOrWhiteSpace(category)||string.IsNullOrWhiteSpace(observation)){message="Completá una mesa válida, categoría y descripción.";return;}observations.Add($"OBS-{observations.Count+1:000} · Mesa {observationTable} · {category}: {observation.Trim()}");observation="";message="Observación registrada en memoria para esta demostración.";}
+ void SaveObservation(){if(observationTable<1 || string.IsNullOrWhiteSpace(category)||string.IsNullOrWhiteSpace(observation)){message="Completá una mesa válida, categoría y descripción.";return;}observations.Add($"OBS-{observations.Count+1:000} · Mesa {observationTable} · {category}: {observation.Trim()}");observation="";observationForm=false;message="Observación registrada en memoria para esta demostración.";}
  void Invalidate(){validated=false;confirmAct=false;}
  void Validate(){if(difference||pending||!showAct)return;validated=true;confirmAct=false;}
  class Incident{public string Code{get;set;}="";public string Type{get;set;}="";public string Terminal{get;set;}="";public string Detail{get;set;}="";public string Status{get;set;}="Abierta";public List<string> History{get;}=["Abierta"];}

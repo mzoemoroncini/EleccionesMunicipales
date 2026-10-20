@@ -2,3 +2,7 @@ bin/
 obj/
 .vs/
 *.user
+node_modules/
+ui-checks/
+dist/
+*.log

@@ -19,18 +19,23 @@ GitHub Actions compila y prueba el arranque del ejecutable y la disponibilidad d
 Alternativa con SDK .NET 10: `dotnet run --project EleccionesMunicipales.csproj`.
 
 ## Recorrido para la exposición
-- Votante: comenzar, seleccionar, revisar, cambiar opción, emitir y finalizar.
-- En revisión, activar la simulación de respuesta incierta. Emitir y consultar el mismo intento.
-- Probar voto en blanco y el botón de revisión deshabilitado sin selección.
-- Personal: buscar 30111222, 30222333 y 30333444. Habilitar, registrar incidencia y avanzar sus estados.
-- Candidatos: completar y registrar una observación.
-- Tribunal: revisar acta, simular diferencia o incidencia pendiente; comprobar el bloqueo. Desactivar simulaciones, revisar y confirmar la validación.
-- Recorrer con Tab, usar Enter y ampliar texto. Probar una ventana angosta.
+- La aplicación abre en Personal electoral, en Verificar votante, siguiendo la pantalla del Word.
+- Buscar 30111222 o 30444555 (habilitados), confirmar la identidad con la casilla y pulsar Habilitar sesión privada.
+- La pantalla del votante se abre automáticamente sin mostrar el DNI. Elegir, revisar, cambiar selección y emitir.
+- Sin habilitación no se permite comenzar, revisar ni emitir. Cambiar de perfil queda bloqueado durante la sesión privada.
+- Finalizar y seleccionar Verificar próximo votante. Buscar el mismo DNI: queda como ya votó, sin nueva habilitación.
+- 30222333 ya votó; 30333444 pertenece a otra mesa; un documento desconocido no figura en el padrón.
+- Cambiar el DNI después de buscar invalida la verificación y exige una nueva búsqueda.
+- En la revisión, desplegar Opciones para la demostración y simular respuesta incierta. Consultar el mismo intento antes de continuar.
+- Desde Personal electoral, Registrar incidencia abre una pantalla separada para registrar y seguir estados.
+- En el pie se puede cambiar a Candidatos o Tribunal cuando no hay sesión privada activa. Las opciones de simulación están plegadas.
+- Candidatos: registrar una observación y consultar su detalle. Tribunal: revisar acta, simular diferencia o incidencia pendiente, comprobar bloqueo y validar al resolver las simulaciones.
+- Recorrer con Tab, usar Enter, ampliar texto y probar una ventana angosta.
 
 ## Alcance real
-Es una demostración de interfaces: no es un sistema electoral operativo. No incluye autenticación, padrón real, base de datos, registro real de votos ni controles de concurrencia. Los perfiles son pestañas de demostración y no permisos de seguridad. Los datos se conservan solamente en la memoria del componente y se pierden al recargar. La sesión privada y la habilitación del personal son simuladas, sin vincular identidad y preferencia. La descarga de auditoría es un CSV estático de ejemplo. La ayuda muestra un aviso, sin avisar a otra persona. La lectura asistida está implementada en el recorrido del votante mediante síntesis de voz del navegador; requiere una voz local en español instalada. No reemplaza un lector de pantalla como TalkBack, NVDA o Narrador.
+Es una demostración de interfaces, sin autenticación ni base de datos. El padrón, la confirmación manual de identidad y la habilitación son ficticios. El estado de participación se mantiene en el servidor en la memoria del componente durante esta sesión de demostración; se reinicia al recargar o abrir otra sesión del navegador. No garantiza unicidad entre terminales ni continuidad tras un reinicio. Las candidaturas no se guardan asociadas a documentos. No se registra un voto electoral real.
 
-Las cifras del tribunal son una maqueta independiente de los votos simulados. En el escenario incierto, la consulta confirma siempre el mismo intento ficticio; no se consulta ningún servidor electoral. La prevención de duplicaciones es solo de interfaz y debe implementarse también en un backend si el proyecto evoluciona.
+Las cifras de Tribunal son ejemplos independientes de las emisiones simuladas. La auditoría descargable es un CSV estático y el pedido de ayuda solo muestra un aviso. La respuesta incierta confirma siempre el mismo intento ficticio. Los perfiles del pie son controles para exponer, no permisos de seguridad. La lectura asistida requiere una voz local en español instalada y no reemplaza TalkBack, NVDA ni Narrador.
 
 ## Lectura en voz alta con auriculares
 1. Conectar auriculares y comprobar la salida de audio del sistema antes de seleccionar una candidatura.

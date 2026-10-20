@@ -36,7 +36,7 @@ jobs:
               if ($process.HasExited) { throw 'El ejecutable se cerró antes de responder' }
               try {
                 $response = Invoke-WebRequest http://127.0.0.1:5180/ -TimeoutSec 2
-                if ($response.StatusCode -eq 200 -and $response.Content.Contains('Tu voto')) { $ready = $true; break }
+                if ($response.StatusCode -eq 200 -and $response.Content.Contains('Verificar votante')) { $ready = $true; break }
               } catch { Start-Sleep -Milliseconds 500 }
             }
             if (!$ready) { throw 'La aplicación no respondió' }
@@ -48,6 +48,23 @@ jobs:
             if (!$process.HasExited) { Stop-Process -Id $process.Id -Force }
             Get-Content stdout.log, stderr.log -ErrorAction SilentlyContinue
           }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verificar navegación y habilitación por DNI
+        shell: pwsh
+        run: |
+          npm install --no-save --package-lock=false playwright@1.61.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/ui.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Guardar capturas de comprobación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprobacion-interfaces
+          path: ui-checks/
+          if-no-files-found: ignore
       - name: Empaquetar
         shell: pwsh
         run: Compress-Archive -Path dist/* -DestinationPath EleccionesMunicipales-Windows-x64.zip
